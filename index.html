@@ -544,7 +544,7 @@
       const getProgressPercent = (actual, target) => Math.min((actual / target) * 100, 100);
       const getProgressClass = (actual, target) => (actual / target) >= 0.9 ? 'good' : '';
 
-      const foodScore = Math.min(100, (totals.calories / targets.calories) * 100);
+       const foodScore = totals.calories <= targets.calories ? 100 : Math.max(0, (targets.calories / totals.calories) * 100);;
       const habitsAnswered = Object.values(questions).filter(Boolean).length;
       const habitsScore = (habitsAnswered / Object.keys(questions).length) * 100;
       const workoutsDone = (weightlifting.duration || weightlifting.calories ? 50 : 0) + 
