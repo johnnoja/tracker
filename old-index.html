@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Tracker</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; }
+    .app { min-height: 100vh; padding-bottom: 100px; }
+    .header { position: sticky; top: 0; background: white; border-bottom: 1px solid #e2e8f0; padding: 16px; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .header h1 { font-size: 28px; font-weight: 700; }
+    .date-btn { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .score-section { display: flex; align-items: center; gap: 16px; }
+    .score-circle { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 32px; flex-shrink: 0; }
+    .score-good { background: #10b981; }
+    .score-ok { background: #eab308; }
+    .score-bad { background: #ef4444; }
+    .score-details { font-size: 13px; color: #475569; line-height: 1.8; display: flex; flex-direction: column; gap: 4px; }
+    .score-detail-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .score-detail-label { font-weight: 500; color: #334155; }
+    .score-detail-value { font-weight: 600; color: #0f172a; }
+    .content { padding: 16px; }
+    .card { background: white; border-radius: 10px; padding: 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; }
+    .card h3 { font-weight: 600; font-size: 16px; margin-bottom: 16px; color: #0f172a; }
+    input[type="text"], input[type="number"], textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; }
+    textarea { resize: vertical; min-height: 80px; }
+    .input-row { display: flex; gap: 12px; }
+    .input-row > * { flex: 1; }
+    button { font-weight: 600; border-radius: 6px; border: none; padding: 10px 16px; cursor: pointer; font-size: 14px; }
+    .food-btn { width: 100%; background: #3b82f6; color: white; margin-top: 8px; }
+    .food-btn:hover { background: #2563eb; }
+    .delete-btn { background: none; color: #ef4444; cursor: pointer; font-size: 20px; padding: 0; margin-left: 8px; flex-shrink: 0; }
+    .progress-section { margin-bottom: 16px; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+    .progress-label-name { color: #475569; font-weight: 500; }
+    .progress-label-value { color: #0f172a; font-weight: 600; }
+    .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #3b82f6; border-radius: 9999px; transition: width 0.3s ease; }
+    .progress-fill.good { background: #10b981; }
+    .progress-fill.bad { background: #ef4444; }
+    .preview-box { padding: 12px; background: #f8fafc; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
+    .preview-title { font-weight: 600; margin-bottom: 4px; }
+    .preview-macros { color: #64748b; font-size: 12px; }
+    .mode-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+    .mode-btn { padding: 10px 16px; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; background: #f1f5f9; color: #334155; cursor: pointer; flex: 1; }
+    .mode-btn.active { background: #3b82f6; color: white; }
+    .label { display: block; font-size: 13px; color: #475569; font-weight: 500; margin-bottom: 8px; margin-top: 8px; }
+    .label:first-child { margin-top: 0; }
+    .hint { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+    .step-buttons { display: flex; gap: 8px; margin-top: 12px; }
+    .step-btn { padding: 10px 14px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; color: #334155; cursor: pointer; flex: 1; }
+    .habit-btn { width: 100%; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 500; border: none; cursor: pointer; margin-bottom: 8px; text-align: left; background: #f1f5f9; color: #475569; }
+    .habit-btn.checked { background: #dcfce7; color: #166534; }
+    .habit-summary { padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569; text-align: center; margin-top: 12px; }
+    .calendar-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .calendar-container { background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; }
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 12px; }
+    .calendar-header h2 { font-size: 18px; font-weight: 600; flex: 1; text-align: center; }
+    .calendar-nav-btn { background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .calendar-nav-btn:hover { background: #e2e8f0; }
+    .calendar-close { background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
+    .calendar-day-header { text-align: center; font-weight: 600; font-size: 12px; color: #64748b; padding: 8px 0; }
+    .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; border: 1px solid #e2e8f0; background: #f8fafc; padding: 0; }
+    .calendar-day:hover { border-color: #cbd5e1; }
+    .calendar-day.empty { cursor: default; background: transparent; border: none; }
+    .calendar-day.today { border: 2px solid #3b82f6; background: #eff6ff; }
+    .calendar-day.score-good { background: #dcfce7; border-color: #10b981; }
+    .calendar-day.score-ok { background: #fef3c7; border-color: #eab308; }
+    .calendar-day.score-bad { background: #fee2e2; border-color: #ef4444; }
+    .calendar-day-num { font-size: 14px; font-weight: 600; color: #0f172a; }
+    .calendar-day-score { font-size: 11px; font-weight: 600; margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    function DailyTracker() {
+      const [date, setDate] = React.useState(new Date().toISOString().split('T')[0]);
+      const [foods, setFoods] = React.useState([]);
+      const [steps, setSteps] = React.useState(0);
+      const [weightlifting, setWeightlifting] = React.useState({ duration: '', calories: '' });
+      const [cardio, setCardio] = React.useState({ duration: '', calories: '' });
+      const [workoutNotes, setWorkoutNotes] = React.useState('');
+      const [questions, setQuestions] = React.useState({ sleep7h: false, hydration: false, mobility: false, meditation: false });
+      const [foodInput, setFoodInput] = React.useState({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+      const [smartInput, setSmartInput] = React.useState('');
+      const [inputMode, setInputMode] = React.useState('smart');
+      const [showCalendar, setShowCalendar] = React.useState(false);
+      const [calendarMonth, setCalendarMonth] = React.useState(new Date());
+      const recognitionRef = React.useRef(null);
+
+      const targets = { calories: 1700, protein: 160, carbs: 150, fat: 50, steps: 10000 };
+
+      const parseSmartInput = (text) => {
+        const calMatch = text.match(/(\d+)\s*cal(?:ories)?/i);
+        const proteinMatch = text.match(/(\d+)\s*(?:g\s+)?p(?:rotein)?/i);
+        const carbsMatch = text.match(/(\d+)\s*(?:g\s+)?c(?:arbs)?/i);
+        const fatMatch = text.match(/(\d+)\s*(?:g\s+)?f(?:at)?/i);
+        
+        let foodName = text;
+        const calPos = text.search(/\d+\s*cal/i);
+        const dashPos = text.lastIndexOf('-');
+        if (calPos !== -1) {
+          foodName = text.substring(0, calPos).trim();
+        } else if (dashPos !== -1 && dashPos > 3) {
+          foodName = text.substring(0, dashPos).trim();
+        }
+        foodName = foodName.replace(/[-–—,]$/g, '').trim();
+
+        return { name: foodName, calories: calMatch ? calMatch[1] : '', protein: proteinMatch ? proteinMatch[1] : '', carbs: carbsMatch ? carbsMatch[1] : '', fat: fatMatch ? fatMatch[1] : '' };
+      };
+
+      React.useEffect(() => {
+        const saved = localStorage.getItem(`tracker_${date}`);
+        if (saved) {
+          try {
+            const data = JSON.parse(saved);
+            setFoods(data.foods || []);
+            setSteps(data.steps || 0);
+            setWeightlifting(data.weightlifting || { duration: '', calories: '' });
+            setCardio(data.cardio || { duration: '', calories: '' });
+            setWorkoutNotes(data.workoutNotes || '');
+            setQuestions(data.questions || { sleep7h: false, hydration: false, mobility: false, meditation: false });
+          } catch (e) {
+            console.error('Error loading data:', e);
+          }
+        }
+      }, [date]);
+
+      React.useEffect(() => {
+        const dataToSave = { foods, steps, weightlifting, cardio, workoutNotes, questions };
+        localStorage.setItem(`tracker_${date}`, JSON.stringify(dataToSave));
+      }, [foods, steps, weightlifting, cardio, workoutNotes, questions, date]);
+
+      React.useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.continuous = false;
+          recognitionRef.current.onresult = (event) => {
+            const transcript = Array.from(event.results).map(result => result[0].transcript).join('');
+            if (inputMode === 'smart') {
+              setSmartInput(prev => prev + (prev ? ' ' : '') + transcript);
+            } else {
+              setFoodInput(prev => ({ ...prev, name: prev.name + (prev.name ? ' ' : '') + transcript }));
+            }
+          };
+        }
+      }, [inputMode]);
+
+      const handleAddFood = () => {
+        const parsed = inputMode === 'smart' ? parseSmartInput(smartInput) : foodInput;
+        if (parsed.name && parsed.calories) {
+          setFoods([...foods, { id: Date.now(), name: parsed.name, calories: Number(parsed.calories), protein: Number(parsed.protein) || 0, carbs: Number(parsed.carbs) || 0, fat: Number(parsed.fat) || 0 }]);
+          setSmartInput('');
+          setFoodInput({ name: '', calories: '', protein: '', carbs: '', fat: '' });
+        }
+      };
+
+      const handleDeleteFood = (id) => {
+        setFoods(foods.filter(f => f.id !== id));
+      };
+
+      const totals = foods.reduce((acc, food) => ({ calories: acc.calories + food.calories, protein: acc.protein + food.protein, carbs: acc.carbs + food.carbs, fat: acc.fat + food.fat }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+      const getProgressPercent = (actual, target) => Math.min((actual / target) * 100, 100);
+      const getProgressClass = (actual, target) => { if (actual > target) return 'bad'; if (actual >= target * 0.9) return 'good'; return ''; };
+
+      const calculateFoodScore = () => {
+        let score = 100;
+        if (totals.calories > targets.calories) {
+          const overage = totals.calories - targets.calories;
+          const penalty = (overage / 30) * 10;
+          score = Math.max(0, 100 - penalty);
+        }
+        if ((totals.protein > targets.protein) || (totals.carbs > targets.carbs) || (totals.fat > targets.fat)) {
+          score = Math.max(0, score - 33);
+        }
+        return Math.round(score);
+      };
+
+      const foodScore = calculateFoodScore();
+      const habitsCount = (questions.sleep7h ? 1 : 0) + (questions.hydration ? 1 : 0) + (questions.mobility ? 1 : 0) + (questions.meditation ? 1 : 0);
+      const habitsScore = (habitsCount / 4) * 100;
+      const gymOrCardioDone = (weightlifting.duration || weightlifting.calories) || (cardio.duration || cardio.calories);
+      const stepsScore = Math.min((steps / targets.steps) * 100, 100);
+      const activityScore = (stepsScore * 0.5) + (gymOrCardioDone ? 50 : 0);
+      const overallScore = Math.round((foodScore * 0.4 + activityScore * 0.4 + habitsScore * 0.2));
+
+      const getScoreClass = (score) => { if (score >= 80) return 'score-good'; if (score >= 60) return 'score-ok'; return 'score-bad'; };
+
+      const getScoreForDate = (dateStr) => {
+        const saved = localStorage.getItem(`tracker_${dateStr}`);
+        if (!saved) return null;
+        try {
+          const data = JSON.parse(saved);
+          const dayFoods = data.foods || [];
+          const daySteps = data.steps || 0;
+          const dayWeightlifting = data.weightlifting || { duration: '', calories: '' };
+          const dayCardio = data.cardio || { duration: '', calories: '' };
+          const dayQuestions = data.questions || {};
+          
+          const dayFoodTotals = dayFoods.reduce((acc, food) => ({ calories: acc.calories + (Number(food.calories) || 0), protein: acc.protein + (Number(food.protein) || 0), carbs: acc.carbs + (Number(food.carbs) || 0), fat: acc.fat + (Number(food.fat) || 0) }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+          
+          let dayFoodScore = 100;
+          if (dayFoodTotals.calories > targets.calories) {
+            const overage = dayFoodTotals.calories - targets.calories;
+            const penalty = (overage / 30) * 10;
+            dayFoodScore = Math.max(0, 100 - penalty);
+          }
+          if ((dayFoodTotals.protein > targets.protein) || (dayFoodTotals.carbs > targets.carbs) || (dayFoodTotals.fat > targets.fat)) {
+            dayFoodScore = Math.max(0, dayFoodScore - 33);
+          }
+          
+          const dayHabitsCount = (dayQuestions.sleep7h ? 1 : 0) + (dayQuestions.hydration ? 1 : 0) + (dayQuestions.mobility ? 1 : 0) + (dayQuestions.meditation ? 1 : 0);
+          const dayHabitsScore = (dayHabitsCount / 4) * 100;
+          
+          const dayGymOrCardioDone = (dayWeightlifting.duration || dayWeightlifting.calories) || (dayCardio.duration || dayCardio.calories);
+          const dayStepsScore = Math.min((daySteps / targets.steps) * 100, 100);
+          const dayActivityScore = (dayStepsScore * 0.5) + (dayGymOrCardioDone ? 50 : 0);
+          
+          return Math.round((dayFoodScore * 0.4 + dayActivityScore * 0.4 + dayHabitsScore * 0.2));
+        } catch {
+          return null;
+        }
+      };
+
+      const generateCalendarDays = () => {
+        const year = calendarMonth.getFullYear();
+        const month = calendarMonth.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const days = [];
+        for (let i = 0; i < firstDay; i++) days.push(null);
+        for (let i = 1; i <= daysInMonth; i++) {
+          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+          days.push({ num: i, dateStr });
+        }
+        return days;
+      };
+
+      const formatDate = (dateStr) => {
+        const [year, month, day] = dateStr.split('-');
+        const d = new Date(year, Number(month) - 1, Number(day));
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      };
+
+      return (
+        <div className="app">
+          <div className="header">
+            <div className="header-top">
+              <h1>Daily Tracker</h1>
+              <button className="date-btn" onClick={() => setShowCalendar(true)}>
+                📅 {formatDate(date)}
+              </button>
+            </div>
+            <div className="score-section">
+              <div className={`score-circle ${getScoreClass(overallScore)}`}>{overallScore}</div>
+              <div className="score-details">
+                <div className="score-detail-row">
+                  <span className="score-detail-label">📊 Food</span>
+                  <span className="score-detail-value">{Math.round(foodScore)}%</span>
+                </div>
+                <div className="score-detail-row">
+                  <span className="score-detail-label">💪 Activity</span>
+                  <span className="score-detail-value">{Math.round(activityScore)}%</span>
+                </div>
+                <div className="score-detail-row">
+                  <span className="score-detail-label">✅ Habits</span>
+                  <span className="score-detail-value">{Math.round(habitsScore)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {showCalendar && (
+            <div className="calendar-modal" onClick={() => setShowCalendar(false)}>
+              <div className="calendar-container" onClick={(e) => e.stopPropagation()}>
+                <div className="calendar-header">
+                  <button className="calendar-nav-btn" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}>←</button>
+                  <h2>{calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h2>
+                  <button className="calendar-nav-btn" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}>→</button>
+                  <button className="calendar-close" onClick={() => setShowCalendar(false)}>✕</button>
+                </div>
+                
+                <div className="calendar-grid">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="calendar-day-header">{day}</div>
+                  ))}
+                  
+                  {generateCalendarDays().map((day, idx) => {
+                    if (!day) return <div key={`empty-${idx}`} className="calendar-day empty" />;
+                    const score = getScoreForDate(day.dateStr);
+                    const isToday = day.dateStr === new Date().toISOString().split('T')[0];
+                    return (
+                      <button key={day.dateStr} className={`calendar-day ${score !== null ? getScoreClass(score) : ''} ${isToday ? 'today' : ''}`} onClick={() => { setDate(day.dateStr); setShowCalendar(false); }}>
+                        <div className="calendar-day-num">{day.num}</div>
+                        {score !== null && <div className="calendar-day-score">{score}</div>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="content">
+            <div className="card">
+              <h3>🍽️ Food Log</h3>
+              <div className="mode-toggle">
+                <button className={`mode-btn ${inputMode === 'smart' ? 'active' : ''}`} onClick={() => setInputMode('smart')}>⚡ Smart</button>
+                <button className={`mode-btn ${inputMode === 'direct' ? 'active' : ''}`} onClick={() => setInputMode('direct')}>📝 Direct</button>
+              </div>
+
+              {inputMode === 'smart' ? (
+                <>
+                  <label className="label">Everything in one line</label>
+                  <div className="input-row">
+                    <input type="text" placeholder="e.g., chicken - 420 cal - 16p 30c 27f" value={smartInput} onChange={(e) => setSmartInput(e.target.value)} />
+                    <button onClick={() => recognitionRef.current?.start()} style={{ width: 'auto', padding: '10px' }}>🎤</button>
+                  </div>
+                  <div className="hint">Auto-fills: name, calories (cal), protein (p), carbs (c), fat (f)</div>
+                  {smartInput && (
+                    <div className="preview-box">
+                      <div className="preview-title">{parseSmartInput(smartInput).name}</div>
+                      <div className="preview-macros">{parseSmartInput(smartInput).calories} cal • {parseSmartInput(smartInput).protein}p {parseSmartInput(smartInput).carbs}c {parseSmartInput(smartInput).fat}f</div>
+                    </div>
+                  )}
+                  <button className="food-btn" onClick={handleAddFood}>Add Food</button>
+                </>
+              ) : (
+                <>
+                  <label className="label">Food Name</label>
+                  <div className="input-row">
+                    <input type="text" placeholder="Food name" value={foodInput.name} onChange={(e) => setFoodInput({ ...foodInput, name: e.target.value })} />
+                    <button onClick={() => recognitionRef.current?.start()} style={{ width: 'auto', padding: '10px' }}>🎤</button>
+                  </div>
+                  <label className="label">Macros</label>
+                  <div className="input-row">
+                    <input type="number" placeholder="Calories" value={foodInput.calories} onChange={(e) => setFoodInput({ ...foodInput, calories: e.target.value })} />
+                    <input type="number" placeholder="Protein (g)" value={foodInput.protein} onChange={(e) => setFoodInput({ ...foodInput, protein: e.target.value })} />
+                  </div>
+                  <div className="input-row">
+                    <input type="number" placeholder="Carbs (g)" value={foodInput.carbs} onChange={(e) => setFoodInput({ ...foodInput, carbs: e.target.value })} />
+                    <input type="number" placeholder="Fat (g)" value={foodInput.fat} onChange={(e) => setFoodInput({ ...foodInput, fat: e.target.value })} />
+                  </div>
+                  <button className="food-btn" onClick={handleAddFood}>Add Food</button>
+                </>
+              )}
+
+              <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                <h3 style={{ marginBottom: '16px' }}>📊 Daily Progress</h3>
+                <div className="progress-section">
+                  <div className="progress-label">
+                    <span className="progress-label-name">Calories</span>
+                    <span className="progress-label-value">{totals.calories} / {targets.calories}</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className={`progress-fill ${getProgressClass(totals.calories, targets.calories)}`} style={{ width: `${getProgressPercent(totals.calories, targets.calories)}%` }} />
+                  </div>
+                </div>
+                <div className="progress-section">
+                  <div className="progress-label">
+                    <span className="progress-label-name">Protein</span>
+                    <span className="progress-label-value">{totals.protein} / {targets.protein}g</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className={`progress-fill ${getProgressClass(totals.protein, targets.protein)}`} style={{ width: `${getProgressPercent(totals.protein, targets.protein)}%` }} />
+                  </div>
+                </div>
+                <div className="progress-section">
+                  <div className="progress-label">
+                    <span className="progress-label-name">Carbs</span>
+                    <span className="progress-label-value">{totals.carbs} / {targets.carbs}g</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className={`progress-fill ${getProgressClass(totals.carbs, targets.carbs)}`} style={{ width: `${getProgressPercent(totals.carbs, targets.carbs)}%` }} />
+                  </div>
+                </div>
+                <div className="progress-section">
+                  <div className="progress-label">
+                    <span className="progress-label-name">Fat</span>
+                    <span className="progress-label-value">{totals.fat} / {targets.fat}g</span>
+                  </div>
+                  <div className="progress-bar">
+                    <div className={`progress-fill ${getProgressClass(totals.fat, targets.fat)}`} style={{ width: `${getProgressPercent(totals.fat, targets.fat)}%` }} />
+                  </div>
+                </div>
+              </div>
+
+              {foods.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: '600', marginBottom: '12px', color: '#475569' }}>Logged Foods</h4>
+                  {foods.map(food => (
+                    <div key={food.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <div style={{ fontSize: '13px' }}>
+                        <div style={{ fontWeight: '500' }}>{food.name}</div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>{food.calories} cal • {food.protein}p {food.carbs}c {food.fat}f</div>
+                      </div>
+                      <button className="delete-btn" onClick={() => handleDeleteFood(food.id)}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <h3>💪 Gym</h3>
+              <div className="input-row">
+                <input type="number" placeholder="Duration (min)" value={weightlifting.duration} onChange={(e) => setWeightlifting({ ...weightlifting, duration: e.target.value })} />
+                <input type="number" placeholder="Calories" value={weightlifting.calories} onChange={(e) => setWeightlifting({ ...weightlifting, calories: e.target.value })} />
+              </div>
+              {(weightlifting.duration || weightlifting.calories) && (
+                <div style={{ marginTop: '12px', padding: '10px', background: '#dcfce7', borderRadius: '6px', fontSize: '13px', color: '#166534', fontWeight: 600 }}>
+                  ✅ Logged: {weightlifting.duration ? weightlifting.duration + ' min' : ''} {weightlifting.duration && weightlifting.calories ? '•' : ''} {weightlifting.calories ? weightlifting.calories + ' cal' : ''}
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <h3>🏃 Cardio</h3>
+              <div className="input-row">
+                <input type="number" placeholder="Duration (min)" value={cardio.duration} onChange={(e) => setCardio({ ...cardio, duration: e.target.value })} />
+                <input type="number" placeholder="Calories" value={cardio.calories} onChange={(e) => setCardio({ ...cardio, calories: e.target.value })} />
+              </div>
+              {(cardio.duration || cardio.calories) && (
+                <div style={{ marginTop: '12px', padding: '10px', background: '#dcfce7', borderRadius: '6px', fontSize: '13px', color: '#166534', fontWeight: 600 }}>
+                  ✅ Logged: {cardio.duration ? cardio.duration + ' min' : ''} {cardio.duration && cardio.calories ? '•' : ''} {cardio.calories ? cardio.calories + ' cal' : ''}
+                </div>
+              )}
+            </div>
+
+            <div className="card">
+              <h3>🚶 Steps</h3>
+              <input type="number" placeholder="Steps today" value={steps} onChange={(e) => setSteps(Number(e.target.value))} />
+              <div className="step-buttons">
+                <button className="step-btn" onClick={() => setSteps(steps + 1000)}>+1k</button>
+                <button className="step-btn" onClick={() => setSteps(steps + 5000)}>+5k</button>
+                <button className="step-btn" onClick={() => setSteps(steps + 10000)}>+10k</button>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '13px', color: '#475569' }}>
+                {steps.toLocaleString()} / {targets.steps.toLocaleString()} ({Math.round((steps / targets.steps) * 100)}%)
+              </div>
+              <div className="progress-bar" style={{ marginTop: '8px' }}>
+                <div className={`progress-fill ${getProgressClass(steps, targets.steps)}`} style={{ width: `${getProgressPercent(steps, targets.steps)}%` }} />
+              </div>
+            </div>
+
+            <div className="card">
+              <h3>📝 Workout Notes</h3>
+              <textarea value={workoutNotes} onChange={(e) => setWorkoutNotes(e.target.value)} placeholder="Any other details or notes?" />
+            </div>
+
+            <div className="card">
+              <h3>✅ Daily Habits</h3>
+              <button className={`habit-btn ${questions.sleep7h ? 'checked' : ''}`} onClick={() => setQuestions({ ...questions, sleep7h: !questions.sleep7h })}>
+                <span>😴 Slept 7+ hours</span>
+                <span>{questions.sleep7h ? '✅' : '⭕'}</span>
+              </button>
+              <button className={`habit-btn ${questions.hydration ? 'checked' : ''}`} onClick={() => setQuestions({ ...questions, hydration: !questions.hydration })}>
+                <span>💧 Drank 4L water</span>
+                <span>{questions.hydration ? '✅' : '⭕'}</span>
+              </button>
+              <button className={`habit-btn ${questions.mobility ? 'checked' : ''}`} onClick={() => setQuestions({ ...questions, mobility: !questions.mobility })}>
+                <span>🧘 Mobility exercises</span>
+                <span>{questions.mobility ? '✅' : '⭕'}</span>
+              </button>
+              <button className={`habit-btn ${questions.meditation ? 'checked' : ''}`} onClick={() => setQuestions({ ...questions, meditation: !questions.meditation })}>
+                <span>🧘‍♀️ Meditation</span>
+                <span>{questions.meditation ? '✅' : '⭕'}</span>
+              </button>
+              <div className="habit-summary">
+                {habitsCount} / 4 habits completed
+              </div>
+            </div>
+
+            <div className="card">
+              <h3>📥 Export Data</h3>
+              <p style={{ fontSize: '13px', color: '#475569', marginBottom: '12px' }}>
+                Click below to download a backup of all your data.
+              </p>
+              <button 
+                className="food-btn" 
+                style={{ background: '#10b981' }}
+                onClick={() => {
+                  const allData = {};
+                  for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('tracker_')) {
+                      allData[key] = JSON.parse(localStorage.getItem(key));
+                    }
+                  }
+                  const dataStr = JSON.stringify(allData, null, 2);
+                  const element = document.createElement('a');
+                  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(dataStr));
+                  element.setAttribute('download', `tracker-backup-${new Date().toISOString().split('T')[0]}.json`);
+                  element.style.display = 'none';
+                  document.body.appendChild(element);
+                  element.click();
+                  document.body.removeChild(element);
+                }}
+              >
+                📥 Download Backup
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<DailyTracker />);
+  </script>
+</body>
+</html>
